@@ -31,15 +31,15 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  async findOne(id: number): Promise<User | null> {
-    return this.usersRepository.findOneBy({ id });
+  async findOne(username: string): Promise<User | undefined> {
+    return this.usersRepository.findOneBy({ username });
   }
 
   // update(id: number, updateUserDto: UpdateUserDto) {
   //   return `This action updates a #${id} user`;
   // }
 
-  async remove(id: number): Promise<void> {
-    await this.usersRepository.delete(id);
-  }
+  // async remove(id: number): Promise<void> {
+  //   await this.usersRepository.delete(id);
+  // }
 }
