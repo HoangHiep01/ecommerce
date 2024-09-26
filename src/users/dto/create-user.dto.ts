@@ -7,6 +7,8 @@ import {
 } from 'class-validator';
 import { UserRole } from '../entities/user.entity';
 
+// define users DTO
+
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
