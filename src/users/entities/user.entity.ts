@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
+// define users table
+
 export enum UserRole {
   OWNER = 'owner',
   STAFF = 'staff',
