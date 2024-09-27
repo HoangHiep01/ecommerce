@@ -1,0 +1,56 @@
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+import { jwtConstants } from './constants';
+import { ROLES_KEY } from './decorators/role.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(
+    private reflector: Reflector,
+    private jwtService: JwtService,
+    private usersService: UsersService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+    if (!requiredRoles) {
+      return true;
+    }
+    // take token from header -> user infor -> Do user have role required?
+    // what if user dont have token and try username/password.
+    // Not finished yet?
+    const request = context.switchToHttp().getRequest();
+
+    const username = request['user'].username;
+    const user = await this.usersService.findOne(username);
+    return requiredRoles === user.role;
+  }
+
+  async verifyTokenAsync(request: Request): Promise<boolean> {
+    const token = this.extractTokenFromHeader(request);
+    if (!token) {
+      return false;
+    }
+    try {
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: jwtConstants.secret,
+      });
+      // 💡 We're assigning the payload to the request object here
+      // so that we can access it in our route handlers
+      request['user'] = payload;
+    } catch {}
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}
