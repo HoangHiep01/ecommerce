@@ -3,6 +3,8 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 // import { UpdateUserDto } from './dto/update-user.dto';
 import { Public } from '../auth/decorators/public.decorator';
+import { Role } from '../auth/decorators/role.decorator';
+import { UserRole } from './entities/user.entity';
 
 // controll route users
 @Controller('users')
@@ -15,10 +17,11 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.usersService.findAll();
-  // }
+  @Role(UserRole.OWNER)
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
 
   @Get(':username')
   findOne(@Param('username') username: string) {
