@@ -24,7 +24,7 @@ export class CreateUserDto {
 
   @IsNumberString()
   @IsNotEmpty()
-  readonly phonenumber;
+  readonly phoneNumber;
 
   @IsEnum(UserRole)
   readonly role;
