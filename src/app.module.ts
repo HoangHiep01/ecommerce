@@ -4,24 +4,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DataSource } from 'typeorm';
 import { UsersModule } from './users/users.module';
-import { User } from './users/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
+import { dataSourceOptions } from 'db/data.source';
 
 @Module({
-  imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'appuser',
-      password: '123456',
-      database: 'ecommercedb',
-      entities: [User],
-      synchronize: true,
-    }),
-    UsersModule,
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forRoot(dataSourceOptions), UsersModule, AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })
