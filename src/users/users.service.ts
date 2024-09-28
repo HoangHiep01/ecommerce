@@ -17,7 +17,7 @@ export class UsersService {
     const user = new User();
     user.username = createUserDto.username;
     user.email = createUserDto.email;
-    user.phonenumber = createUserDto.phonenumber;
+    user.phoneNumber = createUserDto.phoneNumber;
     if (createUserDto.role) {
       user.role = createUserDto.role;
     }
