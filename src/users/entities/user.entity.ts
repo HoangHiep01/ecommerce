@@ -1,6 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-
-// define users table
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Unique,
+  OneToOne,
+} from 'typeorm';
 
 export enum UserRole {
   OWNER = 'owner',
@@ -8,6 +12,7 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Unique(['username', 'email'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,8 +29,8 @@ export class User {
   @Column({ default: false })
   isActive: boolean;
 
-  @Column()
-  phonenumber: string;
+  @Column({ nullable: true })
+  phoneNumber: string;
 
   @Column({
     type: 'enum',
@@ -33,4 +38,46 @@ export class User {
     default: UserRole.STAFF,
   })
   role: UserRole;
+
+  @Column({
+    type: 'timestamptz',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createAt: Date;
+
+  @OneToOne(() => User)
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  createBy: number;
+
+  @Column({
+    type: 'timestamptz',
+    nullable: true,
+  })
+  updateAt: Date;
+
+  @OneToOne(() => User)
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  updateBy: number;
+
+  @Column({
+    type: 'timestamptz',
+    nullable: true,
+  })
+  deleteAt: Date;
+
+  @OneToOne(() => User)
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  deleteBy: number;
+
+  @Column({ default: false })
+  isDelete: boolean;
 }
