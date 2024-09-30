@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,9 +15,21 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = new User();
+
+    // Check username or email is exist?
+    const isUsernameExist = await this.findOneByUsername(
+      createUserDto.username,
+    );
+    const isEmailExist = await this.findOneByEmale(createUserDto.email);
+    if (isUsernameExist || isEmailExist) {
+      throw new BadRequestException('Username or email already taken.');
+    }
+
     user.username = createUserDto.username;
     user.email = createUserDto.email;
-    user.phoneNumber = createUserDto.phoneNumber;
+    if (createUserDto.phoneNumber) {
+      user.phoneNumber = createUserDto.phoneNumber;
+    }
     if (createUserDto.role) {
       user.role = createUserDto.role;
     }
@@ -31,8 +43,12 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  async findOne(username: string): Promise<User | undefined> {
+  async findOneByUsername(username: string): Promise<User | undefined> {
     return this.usersRepository.findOneBy({ username });
+  }
+
+  async findOneByEmale(email: string): Promise<User | undefined> {
+    return this.usersRepository.findOneBy({ email });
   }
 
   // update(id: number, updateUserDto: UpdateUserDto) {
