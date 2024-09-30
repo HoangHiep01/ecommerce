@@ -4,10 +4,9 @@ import {
   IsEmail,
   IsNumberString,
   IsEnum,
+  IsOptional,
 } from 'class-validator';
 import { UserRole } from '../entities/user.entity';
-
-// define users DTO
 
 export class CreateUserDto {
   @IsString()
@@ -22,10 +21,11 @@ export class CreateUserDto {
   @IsNotEmpty()
   readonly email;
 
+  @IsOptional()
   @IsNumberString()
-  @IsNotEmpty()
   readonly phoneNumber;
 
+  @IsOptional()
   @IsEnum(UserRole)
   readonly role;
 }
