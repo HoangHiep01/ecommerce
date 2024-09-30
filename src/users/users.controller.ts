@@ -12,7 +12,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Public()
-  @Post()
+  @Post('signup')
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
@@ -25,7 +25,7 @@ export class UsersController {
 
   @Get(':username')
   findOne(@Param('username') username: string) {
-    return this.usersService.findOne(username);
+    return this.usersService.findOneByUsername(username);
   }
 
   // @Patch(':id')
