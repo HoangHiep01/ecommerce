@@ -1,8 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { jwtConstants } from './constants';
+// import { jwtConstants } from './constants';
 import { ROLES_KEY } from './decorators/role.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
@@ -13,6 +14,7 @@ export class RolesGuard implements CanActivate {
     private reflector: Reflector,
     private jwtService: JwtService,
     private usersService: UsersService,
+    private configSrvice: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,10 +42,11 @@ export class RolesGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
+        secret: this.configSrvice.get<string>('secret'),
       });
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
+      console.log(request['user']);
       request['user'] = payload;
     } catch {}
     return true;
