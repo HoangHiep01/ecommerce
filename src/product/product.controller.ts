@@ -7,11 +7,16 @@ import {
   Param,
   Delete,
   Req,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { Pagination } from 'nestjs-typeorm-paginate';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Product } from './entities/product.entity';
 
 @Controller('product')
 export class ProductController {
@@ -25,6 +30,16 @@ export class ProductController {
   @Get()
   findAll() {
     return this.productService.findAll();
+  }
+
+  @Get('search/:context')
+  async index(
+    @Param('context') context: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+  ): Promise<Pagination<Product>> {
+    limit = limit > 100 ? 100 : limit;
+    return this.productService.searchProductPaginate(context, { page, limit });
   }
 
   @Get(':id')
