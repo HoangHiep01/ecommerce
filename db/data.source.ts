@@ -1,9 +1,14 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { 
+  ConfigModule, 
+  ConfigService 
+} from '@nestjs/config';
 import {
   TypeOrmModuleAsyncOptions,
   TypeOrmModuleOptions,
 } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
+
+require('dotenv').config({ path: ['.env.development.local',] })
 
 export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
@@ -38,5 +43,5 @@ export const dataSourceOptions: DataSourceOptions = {
 };
 
 const dataSource = new DataSource(dataSourceOptions);
-
+// console.log(dataSource);
 export default dataSource;
