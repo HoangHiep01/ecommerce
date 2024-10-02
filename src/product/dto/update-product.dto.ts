@@ -4,6 +4,7 @@ import {
   IsNumberString,
   IsBoolean,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -20,5 +21,10 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsBoolean()
-  readonly isDelete;
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
+  isDelete;
 }
