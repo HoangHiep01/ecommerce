@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
+import {
+  paginate,
+  Pagination,
+  IPaginationOptions,
+} from 'nestjs-typeorm-paginate';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Repository } from 'typeorm';
@@ -49,6 +54,10 @@ export class ProductService {
     request: Request,
   ): Promise<any> {
     const product = await this.productsRepository.findOneBy({ id });
+    if (updateProductDto.isDelete) {
+      updateProductDto.isDelete =
+        updateProductDto.isDelete === 'false' ? false : true;
+    }
     if (!product) {
       throw new NotFoundException('Product not found.');
     }
@@ -59,10 +68,27 @@ export class ProductService {
     });
   }
   async remove(id: number, request: Request): Promise<void> {
-    const product = await this.findOne(id);
-    product.isDelete = true;
-    product.deleteBy = request['user'].sub;
-    product.deletedAt = new Date();
-    await this.productsRepository.update(id, product);
+    await this.findOne(id);
+    // product.isDelete = true;
+    // product.deleteBy = request['user'].sub;
+    // product.deletedAt = new Date();
+    await this.productsRepository.update(id, {
+      isDelete: true,
+      deleteBy: request['user'].sub,
+      deletedAt: new Date(),
+    });
+  }
+  async searchProductPaginate(
+    context: string,
+    options: IPaginationOptions,
+  ): Promise<Pagination<Product>> {
+    const querySearchProduct = this.productsRepository
+      .createQueryBuilder('products')
+      .where(
+        `products.name LIKE '%${context}%' OR products.description LIKE '%${context}%'`,
+      )
+      .andWhere(`products.isDelete = ${false}`);
+
+    return paginate<Product>(querySearchProduct, options);
   }
 }
