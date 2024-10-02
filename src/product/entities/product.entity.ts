@@ -1,6 +1,5 @@
 import { Entity, Column } from 'typeorm';
 import { UserAuditTrackingModel } from '../../baseModels/userAuditTrackingModel';
-import 'dotenv/config';
 
 @Entity('products')
 export class Product extends UserAuditTrackingModel {
