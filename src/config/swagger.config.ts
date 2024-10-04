@@ -1,4 +1,9 @@
-import { DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
+import {
+  SwaggerModule,
+  DocumentBuilder,
+  SwaggerDocumentOptions,
+} from '@nestjs/swagger';
+import type { INestApplication } from '@nestjs/common';
 
 // const bearerAuthOption = {{
 //         type: 'http',
@@ -10,17 +15,23 @@ import { DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
 //     },
 //     'JWT-auth'};
 
-export const documentBuiler = new DocumentBuilder()
-	.setTitle('Ecommerce example')
+export function setupSwagger(app: INestApplication): void {
+  const documentBuiler = new DocumentBuilder()
+    .setTitle('Ecommerce example')
     .setDescription('The ecommerce API description')
     .setVersion('1.0')
     .addTag('Ecommerce')
     .addBearerAuth()
     .build();
 
-export const documentBuilerOptions: SwaggerDocumentOptions = {
-	operationIdFactory: (
-		controllerKey: string,
-		methodKey: string
-	) => methodKey
-};
+  const documentBuilerOptions: SwaggerDocumentOptions = {
+    operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+  };
+
+  const document = SwaggerModule.createDocument(
+    app,
+    documentBuiler,
+    documentBuilerOptions,
+  );
+  SwaggerModule.setup('api', app, document);
+}
