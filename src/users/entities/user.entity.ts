@@ -6,10 +6,7 @@ import {
   OneToOne,
 } from 'typeorm';
 
-export enum UserRole {
-  OWNER = 'owner',
-  STAFF = 'staff',
-}
+import { UserRole } from '../../constants/user-role-type';
 
 @Entity('users')
 @Unique(['username', 'email'])

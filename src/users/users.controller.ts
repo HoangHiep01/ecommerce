@@ -2,9 +2,9 @@ import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 // import { UpdateUserDto } from './dto/update-user.dto';
-import { Public } from '../auth/decorators/public.decorator';
-import { Role } from '../auth/decorators/role.decorator';
-import { UserRole } from './entities/user.entity';
+import { Public } from '../decorators/public.decorator';
+import { Role } from '../decorators/role.decorator';
+import { UserRole } from '../constants/user-role-type';
 
 // controll route users
 @Controller('users')
