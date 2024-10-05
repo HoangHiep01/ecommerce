@@ -4,10 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DataSource } from 'typeorm';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { typeOrmAsyncConfig } from 'db/data.source';
-import { ProductModule } from './product/product.module';
+import { ProductModule } from './modules/product/product.module';
 import configuration from './config/configuration';
 
 @Module({
