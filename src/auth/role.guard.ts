@@ -3,9 +3,8 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-// import { jwtConstants } from './constants';
-import { ROLES_KEY } from './decorators/role.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { ROLES_KEY } from '../decorators/role.decorator';
+import { UserRole } from '../constants/user-role-type';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
