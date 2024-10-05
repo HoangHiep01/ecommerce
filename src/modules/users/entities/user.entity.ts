@@ -5,7 +5,7 @@ import {
   Unique,
   OneToOne,
 } from 'typeorm';
-
+import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../../constants/user-role-type';
 
 @Entity('users')
@@ -15,24 +15,39 @@ export class User {
   id: number;
 
   @Column('varchar', { length: 150 })
+  @ApiProperty({
+    description: 'provide username.',
+  })
   username: string;
 
   @Column('text')
+  @ApiProperty({
+    description: 'provide password.',
+  })
   password: string;
 
   @Column('varchar', { length: 256 })
+  @ApiProperty({
+    description: 'provide email.',
+  })
   email: string;
 
   @Column({ default: false })
   isActive: boolean;
 
   @Column({ nullable: true })
-  phoneNumber: string;
+  @ApiProperty({
+    description: 'provide phoneumber.',
+  })
+  phoneNumber?: string;
 
   @Column({
     type: 'enum',
     enum: UserRole,
     default: UserRole.STAFF,
+  })
+  @ApiProperty({
+    description: 'provide user role.',
   })
   role: UserRole;
 
