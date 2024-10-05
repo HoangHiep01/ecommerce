@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { BaseModel } from './baseEntity';
-import { User } from '../users/entities/user.entity';
+import { User } from '../modules/users/entities/user.entity';
 
 export class UserAuditTrackingModel extends BaseModel {
   @CreateDateColumn()

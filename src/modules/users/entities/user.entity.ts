@@ -6,7 +6,7 @@ import {
   OneToOne,
 } from 'typeorm';
 
-import { UserRole } from '../../constants/user-role-type';
+import { UserRole } from '../../../constants/user-role-type';
 
 @Entity('users')
 @Unique(['username', 'email'])

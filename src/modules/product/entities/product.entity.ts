@@ -1,5 +1,5 @@
 import { Entity, Column } from 'typeorm';
-import { UserAuditTrackingModel } from '../../baseModels/userAuditTrackingModel';
+import { UserAuditTrackingModel } from '../../../baseModels/userAuditTrackingModel';
 
 @Entity('products')
 export class Product extends UserAuditTrackingModel {

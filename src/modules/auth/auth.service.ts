@@ -14,7 +14,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signIn(
+  async login(
     username: string,
     password: string,
   ): Promise<{ access_token: string }> {
