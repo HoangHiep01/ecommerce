@@ -43,9 +43,9 @@ export class ProductService {
       id: id,
       isDelete: false,
     });
-    if (!result) {
-      throw new NotFoundException('Product not found.');
-    }
+    // if (!result) {
+    //   throw new NotFoundException('Product not found.');
+    // }
     return result;
   }
   async update(
