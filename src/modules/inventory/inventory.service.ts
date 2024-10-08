@@ -86,9 +86,13 @@ export class InventoryService {
     });
   }
 
-  remove(id: number, request: Request) {
-    if (await this.productsService.findOne(createInventoryDto.productId)) {
-      return await this.update(id, { isDelete: true }, request);
+  async remove(id: number, request: Request) {
+    if (await this.productsService.findOne(id)) {
+      return await this.inventoryRepository.update(id, {
+        isDelete: true,
+        deleteBy: request['user'].sub,
+        deletedAt: new Date(),
+      });
     }
     throw new NotFoundException("Product does't exist in inventory.");
   }
