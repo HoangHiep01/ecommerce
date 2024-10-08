@@ -20,7 +20,7 @@ export class UsersService {
     const isUsernameExist = await this.findOneByUsername(
       createUserDto.username,
     );
-    const isEmailExist = await this.findOneByEmale(createUserDto.email);
+    const isEmailExist = await this.findOneByEmail(createUserDto.email);
     if (isUsernameExist || isEmailExist) {
       throw new BadRequestException('Username or email already taken.');
     }
@@ -47,7 +47,7 @@ export class UsersService {
     return this.usersRepository.findOneBy({ username });
   }
 
-  async findOneByEmale(email: string): Promise<User | undefined> {
+  async findOneByEmail(email: string): Promise<User | undefined> {
     return this.usersRepository.findOneBy({ email });
   }
 
