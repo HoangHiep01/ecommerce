@@ -1,24 +1,12 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOkResponse,
-  ApiOperation,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 // import { UpdateUserDto } from './dto/update-user.dto';
 import { Public } from '../../decorators/public.decorator';
 import { Role } from '../../decorators/role.decorator';
 import { UserRole } from '../../constants/user-role-type';
+import { ApiDocument } from '../../decorators/document.decorator';
 
 @Controller('users')
 @ApiTags('User')
@@ -27,17 +15,16 @@ export class UsersController {
 
   @Public()
   @Post('signup')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Register user account.' })
-  @ApiOkResponse({ description: 'User information successfully registered.' })
+  @ApiDocument(
+    'Register user account.',
+    'User information successfully registered.',
+  )
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
   @Role(UserRole.OWNER)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get list user account.' })
-  @ApiOkResponse({ description: 'List user account.' })
+  @ApiDocument('Get list user account.', 'List user account.')
   @ApiBearerAuth('JWT-auth')
   @Get()
   findAll() {
@@ -45,9 +32,7 @@ export class UsersController {
   }
 
   @Get(':username')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get one user account.' })
-  @ApiOkResponse({ description: 'User account.' })
+  @ApiDocument('Get one user account.', 'User account.')
   @ApiBearerAuth('JWT-auth')
   findOne(@Param('username') username: string) {
     return this.usersService.findOneByUsername(username);
