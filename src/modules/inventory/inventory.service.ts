@@ -1,26 +1,95 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Request } from 'express';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  paginate,
+  Pagination,
+  IPaginationOptions,
+} from 'nestjs-typeorm-paginate';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { CreateProductDto } from '../product/dto/create-product.dto';
+import { Inventory } from './entities/inventory.entity';
+import { ProductService } from '../product/product.service';
 
 @Injectable()
 export class InventoryService {
-  create(createInventoryDto: CreateInventoryDto) {
-    return 'This action adds a new inventory';
+  constructor(
+    @InjectRepository(Inventory)
+    private inventoryRepository: Repository<Inventory>,
+    private productsService: ProductService,
+  ) {}
+
+  async create(
+    quantity: number,
+    createProductDto: CreateProductDto,
+    request: Request,
+  ): Promise<Inventory> {
+    const product = await this.productsService.create(
+      createProductDto,
+      request,
+    );
+
+    const createInventoryDto = new CreateInventoryDto();
+    createInventoryDto.quantity = quantity;
+    createInventoryDto.productId = product.id;
+
+    return await this.add(createInventoryDto, request);
   }
 
-  findAll() {
-    return `This action returns all inventory`;
+  async add(
+    createInventoryDto: CreateInventoryDto,
+    request: Request,
+  ): Promise<Inventory> {
+    if (await this.productsService.findOne(createInventoryDto.productId)) {
+      const inventory = new Inventory();
+
+      inventory.quantity = createInventoryDto.quantity;
+      inventory.productId = createInventoryDto.productId;
+      console.log(inventory, createInventoryDto);
+      inventory.createBy = request['user'].sub;
+      inventory.createAt = new Date();
+      inventory.updateBy = request['user'].sub;
+      inventory.updateAt = new Date();
+
+      return await this.inventoryRepository.save(inventory);
+    }
+    throw new NotFoundException('Product id does exist.');
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} inventory`;
+  async findAll(options: IPaginationOptions): Promise<Pagination<Inventory>> {
+    const query = this.inventoryRepository
+      .createQueryBuilder('inventory')
+      .leftJoinAndSelect('inventory.productId', 'product');
+
+    return paginate<Inventory>(query, options);
   }
 
-  update(id: number, updateInventoryDto: UpdateInventoryDto) {
-    return `This action updates a #${id} inventory`;
+  async findOne(id: number): Promise<Inventory | undefined> {
+    const query = await this.inventoryRepository
+      .createQueryBuilder('inventory')
+      .leftJoinAndSelect('inventory.productId', 'product')
+      .where('inventory.id = :id', { id });
+    return await query.getOne();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} inventory`;
+  async update(
+    id: number,
+    updateInventoryDto: UpdateInventoryDto,
+    request: Request,
+  ) {
+    await this.inventoryRepository.update(id, updateInventoryDto);
+    await this.inventoryRepository.update(id, {
+      updateBy: request['user'].sub,
+      updateAt: new Date(),
+    });
+  }
+
+  remove(id: number, request: Request) {
+    if (await this.productsService.findOne(createInventoryDto.productId)) {
+      return await this.update(id, { isDelete: true }, request);
+    }
+    throw new NotFoundException("Product does't exist in inventory.");
   }
 }
