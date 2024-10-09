@@ -8,6 +8,21 @@
 
 ## Setup và run locally
 
+### Cấu trúc file .env
+
+```env
+PORT=
+
+DATABASE_TYPE=
+DATABASE_HOST=
+DATABASE_PORT=
+DATABASE_USERNAME=
+DATABASE_PASSWORD=
+DATABASE_NAME=
+
+SECRET=
+```
+
 ### Project setup
 
 ```bash
