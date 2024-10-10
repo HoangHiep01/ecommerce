@@ -33,5 +33,5 @@ export function setupSwagger(app: INestApplication): void {
     documentBuiler,
     documentBuilerOptions,
   );
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/v1', app, document);
 }
