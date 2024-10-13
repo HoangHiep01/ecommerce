@@ -5,7 +5,8 @@ import {
 } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
-require('dotenv').config({ path: ['.env.development.local'] });
+// uncomment when make migration
+// require('dotenv').config({ path: ['.env.development.local'] });
 
 export const typeOrmAsyncConfig: TypeOrmModuleAsyncOptions = {
   imports: [ConfigModule],
