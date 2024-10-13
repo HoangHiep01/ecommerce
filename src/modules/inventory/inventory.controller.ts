@@ -16,7 +16,7 @@ import { InventoryService } from './inventory.service';
 import { Request } from 'express';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
-import { CreateProductDto } from '../product/dto/create-product.dto';
+import { AddInventoryDto } from './dto/add-inventory.dto';
 import { ApiDocument } from '../../decorators/document.decorator';
 
 @ApiBearerAuth('JWT-auth')
@@ -31,11 +31,10 @@ export class InventoryController {
     'Product is created and added into inventory.',
   )
   create(
-    @Body() createProductDto: CreateProductDto,
-    @Body() quantity: number,
+    @Body() createInventoryDto: CreateInventoryDto,
     @Req() request: Request,
   ) {
-    return this.inventoryService.create(quantity, createProductDto, request);
+    return this.inventoryService.create(createInventoryDto, request);
   }
 
   @Post('add')
@@ -43,8 +42,8 @@ export class InventoryController {
     'Add existing product into inventory.',
     'Product is added into inventory.',
   )
-  add(@Body() createInventoryDto: CreateInventoryDto, @Req() request: Request) {
-    return this.inventoryService.add(createInventoryDto, request);
+  add(@Body() addInventoryDto: AddInventoryDto, @Req() request: Request) {
+    return this.inventoryService.add(addInventoryDto, request);
   }
 
   @ApiDocument(
@@ -84,10 +83,19 @@ export class InventoryController {
 
   @ApiDocument(
     'Deleting a product in inventory but actually marking the product as deleted.',
-    'Product is marked as deleted.',
+    'Item is marked as deleted.',
   )
   @Delete(':id')
   remove(@Param('id') id: string, @Req() request: Request) {
     return this.inventoryService.remove(+id, request);
+  }
+
+  @ApiDocument(
+    'Restore a product in inventory that marked as deleted',
+    'Item is back.',
+  )
+  @Post(':id')
+  restore(@Param('id') id: string, @Req() request: Request) {
+    return this.inventoryService.restore(+id, request);
   }
 }
