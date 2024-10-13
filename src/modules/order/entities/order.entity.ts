@@ -1,10 +1,14 @@
-import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
-import { UserAuditTrackingModel } from '../../../baseModels/userAuditTrackingModel';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
+import { AbstractUserTrackingEntity } from '../../../common/abstract.user-tracking.entity';
 import { Customer } from '../../customers/entities/customer.entity';
 import { OrderState } from '../../../constants/order-state';
 
 @Entity('order')
-export class Order extends UserAuditTrackingModel {
+export class Order extends AbstractUserTrackingEntity {
+  @ApiProperty({
+    description: 'State of order.',
+  })
   @Column({
     type: 'enum',
     enum: OrderState,
@@ -12,7 +16,10 @@ export class Order extends UserAuditTrackingModel {
   })
   state: OrderState;
 
-  @OneToOne(() => Customer)
+  @ApiProperty({
+    description: 'Customer of order.',
+  })
+  @ManyToOne(() => Customer, { eager: true, nullable: false })
   @JoinColumn()
-  customer: number;
+  customer: Customer;
 }
