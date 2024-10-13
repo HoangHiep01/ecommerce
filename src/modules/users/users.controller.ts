@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -8,8 +17,8 @@ import { Role } from '../../decorators/role.decorator';
 import { UserRole } from '../../constants/user-role-type';
 import { ApiDocument } from '../../decorators/document.decorator';
 
-@Controller('users')
 @ApiTags('User')
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -20,22 +29,27 @@ export class UsersController {
     'User information successfully registered.',
   )
   create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    return this.usersService.createUser(createUserDto);
   }
 
-  @Role(UserRole.OWNER)
   @ApiDocument('Get list user account.', 'List user account.')
   @ApiBearerAuth('JWT-auth')
+  @Role(UserRole.OWNER)
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+  ) {
+    limit = limit > 100 ? 100 : limit;
+    return this.usersService.findAll({ page, limit });
   }
 
-  @Get(':username')
-  @ApiDocument('Get one user account.', 'User account.')
   @ApiBearerAuth('JWT-auth')
-  findOne(@Param('username') username: string) {
-    return this.usersService.findOneByUsername(username);
+  @ApiDocument('Get one user account.', 'User account.')
+  @Role(UserRole.OWNER)
+  @Get(':username')
+  findOne(@Param('username') userName: string) {
+    return this.usersService.findOneByUserName(userName);
   }
 
   // @Patch(':id')
