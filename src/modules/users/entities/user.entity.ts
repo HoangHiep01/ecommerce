@@ -1,26 +1,18 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  Unique,
-  OneToOne,
-} from 'typeorm';
+import { Entity, Column, Unique } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../../constants/user-role-type';
+import { AbstractUserTrackingEntity } from '../../../common/abstract.user-tracking.entity';
 
 @Entity('users')
-@Unique(['username', 'email'])
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+@Unique(['userName', 'email'])
+export class User extends AbstractUserTrackingEntity {
   @Column('varchar', { length: 150 })
   @ApiProperty({
     description: 'provide username.',
   })
-  username: string;
+  userName: string;
 
-  @Column('text')
+  @Column('text', { select: false })
   @ApiProperty({
     description: 'provide password.',
   })
@@ -50,46 +42,4 @@ export class User {
     description: 'provide user role.',
   })
   role: UserRole;
-
-  @Column({
-    type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
-  })
-  createAt: Date;
-
-  @OneToOne(() => User)
-  @Column({
-    type: 'integer',
-    nullable: true,
-  })
-  createBy: number;
-
-  @Column({
-    type: 'timestamptz',
-    nullable: true,
-  })
-  updateAt: Date;
-
-  @OneToOne(() => User)
-  @Column({
-    type: 'integer',
-    nullable: true,
-  })
-  updateBy: number;
-
-  @Column({
-    type: 'timestamptz',
-    nullable: true,
-  })
-  deleteAt: Date;
-
-  @OneToOne(() => User)
-  @Column({
-    type: 'integer',
-    nullable: true,
-  })
-  deleteBy: number;
-
-  @Column({ default: false })
-  isDelete: boolean;
 }

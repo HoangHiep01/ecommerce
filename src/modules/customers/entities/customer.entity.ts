@@ -1,9 +1,12 @@
 import { Entity, Column } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserAuditTrackingModel } from '../../../baseModels/userAuditTrackingModel';
+import { AbstractUserTrackingEntity } from '../../../common/abstract.user-tracking.entity';
+
+// deal with circular references
+// import { User } from '../../users/entities/user.entity';
 
 @Entity('customers')
-export class Customer extends UserAuditTrackingModel {
+export class Customer extends AbstractUserTrackingEntity {
   @ApiProperty({
     description: 'provide full name of customer.',
   })

@@ -1,20 +1,30 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 import { Cart } from './cart.entity';
 import { Inventory } from '../../inventory/entities/inventory.entity';
-import { UserAuditTrackingModel } from '../../../baseModels/userAuditTrackingModel';
+import { AbstractUserTrackingEntity } from '../../../common/abstract.user-tracking.entity';
 
 @Entity('cartItem')
-export class CartItem extends UserAuditTrackingModel {
-  @ManyToOne(() => Cart)
+export class CartItem extends AbstractUserTrackingEntity {
+  @ApiProperty({
+    description: 'Link to cart.',
+  })
+  @ManyToOne(() => Cart, { nullable: false })
   @JoinColumn()
-  cart: number;
+  cart: Cart;
 
-  @ManyToOne(() => Inventory)
+  @ApiProperty({
+    description: 'Link to product in inventory.',
+  })
+  @ManyToOne(() => Inventory, { eager: true, nullable: false })
   @JoinColumn()
-  inventory: number;
+  inventory: Inventory;
 
+  @ApiProperty({
+    description: 'Quantity of product in order.',
+  })
   @Column({
-    default: 0,
+    default: 1,
   })
   quantity: number;
 }
