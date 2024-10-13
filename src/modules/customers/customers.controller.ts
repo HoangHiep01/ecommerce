@@ -7,6 +7,9 @@ import {
   Param,
   Delete,
   Req,
+  DefaultValuePipe,
+  ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -32,8 +35,12 @@ export class CustomersController {
 
   @Get()
   @ApiDocument('Get all customers.', 'List customers.')
-  findAll() {
-    return this.customersService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+  ) {
+    limit = limit > 100 ? 100 : limit;
+    return this.customersService.findAll({ page, limit });
   }
 
   @Get(':id')
@@ -56,5 +63,11 @@ export class CustomersController {
   @ApiDocument('Delete customer by id.', 'Customer marked as deleted.')
   remove(@Param('id') id: string, @Req() request: Request) {
     return this.customersService.remove(+id, request);
+  }
+
+  @Post('restore/:id')
+  @ApiDocument('Restore customer from softdelete.', 'Customer information')
+  restore(@Param('id') id: string, @Req() request: Request) {
+    return this.customersService.restore(+id, request);
   }
 }
