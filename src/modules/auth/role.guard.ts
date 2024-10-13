@@ -29,8 +29,10 @@ export class RolesGuard implements CanActivate {
     // Not finished yet?
     const request = context.switchToHttp().getRequest();
 
-    const username = request['user'].username;
-    const user = await this.usersService.findOneByUsername(username);
+    const userName = request['user'].userName;
+    const user = await this.usersService.findOneByUserName(userName);
+    // console.log(userName);
+    // console.log(user);
     return requiredRoles === user.role;
   }
 
@@ -45,7 +47,7 @@ export class RolesGuard implements CanActivate {
       });
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      console.log(request['user']);
+      // console.log(request['user']);
       request['user'] = payload;
     } catch {}
     return true;

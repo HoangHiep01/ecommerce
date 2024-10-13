@@ -12,6 +12,7 @@ import { AuthGuard } from './auth.guard';
 import { Public } from '../../decorators/public.decorator';
 import { UserLoginDto } from './dto/user-login.dto';
 import { ApiDocument } from '../../decorators/document.decorator';
+import { genenateReturnObject } from '../../constants/return-object';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -22,7 +23,7 @@ export class AuthController {
   @Public()
   @Post('login')
   login(@Body() loginDto: UserLoginDto) {
-    return this.authService.login(loginDto.username, loginDto.password);
+    return this.authService.login(loginDto.userName, loginDto.password);
   }
 
   @UseGuards(AuthGuard)
@@ -30,6 +31,6 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @Get('profile')
   getProfile(@Request() req) {
-    return req.user;
+    return genenateReturnObject(200, { infor: req.user });
   }
 }

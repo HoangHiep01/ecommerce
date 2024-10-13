@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcryptjs from 'bcryptjs';
+import { genenateReturnObject } from '../../constants/return-object';
 
 @Injectable()
 export class AuthService {
@@ -14,20 +15,26 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(
-    username: string,
-    password: string,
-  ): Promise<{ access_token: string }> {
-    const user = await this.usersService.findOneByUsername(username);
-    if (!user) {
-      throw new BadRequestException('Account is not found.');
-    }
-    const isMatch = await bcryptjs.compare(password, user.password);
+  async login(userName: string, password: string): Promise<object> {
+    try {
+      const user = await this.usersService.findOneByUserName(userName);
+      if (!user) {
+        throw new BadRequestException('Account is not found.');
+      }
 
-    if (!isMatch) {
-      throw new UnauthorizedException('Password is incorrect.');
+      // return object User contain password
+      const userPin = await this.usersService.findPasswordByUserName(userName);
+      const isMatch = await bcryptjs.compare(password, userPin.password);
+
+      if (!isMatch) {
+        throw new UnauthorizedException('Password is incorrect.');
+      }
+      const payload = { sub: user.id, userName: user.userName };
+      return genenateReturnObject(200, {
+        accessToken: await this.jwtService.signAsync(payload),
+      });
+    } catch (e) {
+      return genenateReturnObject(400, {}, (e as Error).message);
     }
-    const payload = { sub: user.id, username: user.username };
-    return { access_token: await this.jwtService.signAsync(payload) };
   }
 }
