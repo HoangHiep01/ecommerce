@@ -94,8 +94,25 @@ export class CartController {
     'Sort remove product out of cart.',
     'Product is marked as out of cart.',
   )
-  @Delete(':cardId')
-  remove(@Param('cardId') cardId: string) {
-    return this.cartService.remove(+cardId);
+  @Delete(':cardId/item/:itemId')
+  remove(
+    @Param('cardId') cardId: string,
+    @Param('itemId') itemId: string,
+    @Req() request: Request,
+  ) {
+    return this.cartService.remove(+cardId, +itemId, request);
+  }
+
+  @ApiDocument(
+    'Restore item in cart marked as delete.',
+    'Item restore in cart.',
+  )
+  @Post(':cardId/item/:itemId')
+  restore(
+    @Param('cardId') cardId: string,
+    @Param('itemId') itemId: string,
+    @Req() request: Request,
+  ) {
+    return this.cartService.restore(+cardId, +itemId, request);
   }
 }
