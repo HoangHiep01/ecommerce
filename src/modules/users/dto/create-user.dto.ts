@@ -11,7 +11,7 @@ import { UserRole } from '../../../constants/user-role-type';
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
-  readonly username;
+  readonly userName;
 
   @IsString()
   @IsNotEmpty()
