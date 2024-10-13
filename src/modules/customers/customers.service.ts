@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
-import { Repository } from 'typeorm';
+import { Repository, IsNull, Not } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { paginate, IPaginationOptions } from 'nestjs-typeorm-paginate';
+import { genenateReturnObject } from '../../constants/return-object';
 
 @Injectable()
 export class CustomersService {
@@ -16,57 +18,121 @@ export class CustomersService {
   async create(
     createCustomerDto: CreateCustomerDto,
     request: Request,
-  ): Promise<Customer> {
-    const customer = new Customer();
+  ): Promise<object> {
+    try {
+      const customer = new Customer();
 
-    customer.name = createCustomerDto.name;
-    customer.address = createCustomerDto.address;
-    customer.phoneNumber = createCustomerDto.phoneNumber;
-    customer.email = createCustomerDto.email;
+      customer.name = createCustomerDto.name;
+      customer.address = createCustomerDto.address;
+      customer.phoneNumber = createCustomerDto.phoneNumber;
+      customer.email = createCustomerDto.email;
 
-    customer.createBy = request['user'].sub;
-    customer.updateBy = request['user'].sub;
-    customer.createAt = new Date();
-    customer.updateAt = new Date();
-    return await this.customerRepository.save(customer);
+      customer.createdBy = request['user'].sub;
+      customer.updatedBy = request['user'].sub;
+
+      const data = await this.customerRepository.save(customer);
+      return genenateReturnObject(200, data);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    }
   }
 
-  async findAll(): Promise<Customer[]> {
-    return await this.customerRepository.find();
+  async findAll(options: IPaginationOptions): Promise<object> {
+    try {
+      const query = this.customerRepository.createQueryBuilder();
+      const data = await paginate<Customer>(query, options);
+      return genenateReturnObject(200, data);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    }
   }
 
-  async findOne(id: number): Promise<Customer> {
-    return await this.customerRepository.findOne({ where: { id } });
+  async findOne(id: number): Promise<object> {
+    try {
+      const customer = await this.customerRepository.findOne({ where: { id } });
+
+      if (!customer) {
+        return genenateReturnObject(404, {}, 'Customer not found.');
+      }
+      return genenateReturnObject(200, customer);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    }
   }
 
   async update(
     id: number,
     updateCustomerDto: UpdateCustomerDto,
     request: Request,
-  ): Promise<void> {
-    if (!(await this.findOne(id))) {
-      throw new NotFoundException('Customer not found.');
+  ): Promise<object> {
+    try {
+      const customer = await this.customerRepository.findOne({ where: { id } });
+      if (!customer) {
+        return genenateReturnObject(404, {}, 'Customer not found.');
+      }
+      await this.customerRepository.update(id, {
+        updatedBy: request['user'].sub,
+      });
+      await this.customerRepository.update(id, updateCustomerDto);
+      return await this.findOne(id);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
     }
-
-    if (updateCustomerDto.isDelete) {
-      updateCustomerDto.isDelete =
-        updateCustomerDto.isDelete === 'false' ? false : true;
-    }
-
-    await this.customerRepository.update(id, updateCustomerDto);
-    await this.customerRepository.update(id, {
-      updateBy: request['user'].sub,
-      updateAt: new Date(),
-    });
   }
 
-  async remove(id: number, request: Request): Promise<void> {
-    const updateCustomerDto = {
-      isDelete: true,
-      deleteBy: request['user'].sub,
-      deletedAt: new Date(),
-    };
+  async remove(id: number, request: Request): Promise<object> {
+    try {
+      const customer = await this.customerRepository.findOneBy({
+        id: id,
+        deletedAt: null,
+      });
+      if (!customer) {
+        return genenateReturnObject(404, {}, 'Customer not found');
+      }
+      await this.customerRepository.update(id, {
+        deletedBy: request['user'].sub,
+      });
+      await this.customerRepository
+        .createQueryBuilder()
+        .softDelete()
+        .where('id = :id', { id: id })
+        .execute();
+      const data = await this.customerRepository.find({
+        where: {
+          id: id,
+          deletedAt: Not(IsNull()),
+        },
+        withDeleted: true,
+      });
+      return genenateReturnObject(200, data);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    }
+  }
 
-    this.update(id, updateCustomerDto, request);
+  async restore(id: number, request: Request): Promise<object> {
+    try {
+      const customer = await this.customerRepository.findOne({
+        where: {
+          id: id,
+          deletedAt: Not(IsNull()),
+        },
+        withDeleted: true,
+      });
+      if (!customer) {
+        return genenateReturnObject(404, {}, 'Customer not found');
+      }
+      await this.customerRepository.update(id, {
+        updatedBy: request['user'].sub,
+      });
+      await this.customerRepository
+        .createQueryBuilder()
+        .restore()
+        .where('id = :id', { id: id })
+        .execute();
+      return await this.findOne(id);
+    } catch (e) {
+      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    }
   }
 }
