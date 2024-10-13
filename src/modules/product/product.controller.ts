@@ -13,11 +13,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
-import { Pagination } from 'nestjs-typeorm-paginate';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
 import { ApiDocument } from '../../decorators/document.decorator';
 
 @Controller('product')
@@ -34,8 +32,12 @@ export class ProductController {
 
   @Get()
   @ApiDocument('Get all products.', 'List products.')
-  findAll() {
-    return this.productService.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
+  ) {
+    limit = limit > 100 ? 100 : limit;
+    return this.productService.findAll({ page, limit });
   }
 
   @Get('search/:context')
@@ -44,7 +46,7 @@ export class ProductController {
     @Param('context') context: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number = 10,
-  ): Promise<Pagination<Product>> {
+  ) {
     limit = limit > 100 ? 100 : limit;
     return this.productService.searchProductPaginate(context, { page, limit });
   }
@@ -72,5 +74,11 @@ export class ProductController {
   )
   remove(@Param('id') id: string, @Req() request: Request) {
     return this.productService.remove(+id, request);
+  }
+
+  @Post('restore/:id')
+  @ApiDocument('Restore product from softdelete.', 'Product information')
+  restore(@Param('id') id: string, @Req() request: Request) {
+    return this.productService.restore(+id, request);
   }
 }
