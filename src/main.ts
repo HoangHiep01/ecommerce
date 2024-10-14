@@ -11,6 +11,8 @@ async function bootstrap() {
 
   setupSwagger(app);
 
+  app.setGlobalPrefix('api/v1');
+
   await app.listen(configService.get<number>('port'));
 }
 bootstrap();
