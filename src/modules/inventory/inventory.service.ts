@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { Repository, Not, IsNull, Equal } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +16,10 @@ export class InventoryService {
     @InjectRepository(Inventory)
     private inventoryRepository: Repository<Inventory>,
     private productsService: ProductService,
+    private logger: Logger,
   ) {}
+
+  SERVICE: string = InventoryService.name;
 
   async create(
     createInventoryDto: CreateInventoryDto,
@@ -27,20 +30,41 @@ export class InventoryService {
         createInventoryDto,
         request,
       );
-      // console.log(product['data']);
+
       if (product['statusCode'] != 200) {
+        this.logger.log(
+          'Unable to create product and add into inventory',
+          this.SERVICE,
+        );
         return genenateReturnObject(
           400,
           {},
-          'Can not create product and add it to inventory.',
+          'Can not create product and add it into inventory',
         );
       }
       const addInventoryDto = new AddInventoryDto();
       addInventoryDto.quantity = createInventoryDto.quantity;
       addInventoryDto.productId = product['data'].id;
-      return await this.add(addInventoryDto, request);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+      const result = await this.add(addInventoryDto, request);
+      if (result['statusCode'] != 200) {
+        this.logger.log(
+          `Product created but can not add into inventory`,
+          this.SERVICE,
+        );
+      } else {
+        this.logger.log(
+          `Product added into inventory successfully ${result['data'].id}`,
+          this.SERVICE,
+        );
+      }
+      return result;
+    } catch (error) {
+      this.logger.error(
+        'Unable to create product and add it into inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -59,14 +83,22 @@ export class InventoryService {
       const inventory = new Inventory();
       inventory.quantity = addInventoryDto.quantity;
       inventory.productId = addInventoryDto.productId;
-      console.log(inventory, addInventoryDto);
       inventory.createdBy = request['user'].sub;
       inventory.updatedBy = request['user'].sub;
 
       const data = await this.inventoryRepository.save(inventory);
+      this.logger.log(
+        `Product added into inventory successfully ${data.id}`,
+        this.SERVICE,
+      );
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to add product in inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -77,9 +109,18 @@ export class InventoryService {
         .leftJoinAndSelect('inventory.productId', 'product');
 
       const data = await paginate<Inventory>(query, options);
+      this.logger.log(
+        `List product in inventory fetched successfully`,
+        this.SERVICE,
+      );
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch list product in inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -96,11 +137,21 @@ export class InventoryService {
         },
       });
       if (!data) {
+        this.logger.log(`Product not found in inventory ${id}`, this.SERVICE);
         return genenateReturnObject(400, {}, 'Product not found in inventory.');
       }
+      this.logger.log(
+        `Product fetched successfully from inventory ${id}`,
+        this.SERVICE,
+      );
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch product from inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -117,20 +168,25 @@ export class InventoryService {
           quantity: updateInventoryDto.quantity,
         });
       }
+      this.logger.log(
+        `Product in inventory updated successfully ${id}`,
+        this.SERVICE,
+      );
       return await this.findOne(id);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
   async remove(id: number, request: Request) {
     try {
-      const item = await this.inventoryRepository.findOneBy({
-        id: id,
-        deletedAt: null,
-      });
-      if (!item) {
-        return genenateReturnObject(404, {}, 'Item not found in inventory.');
+      const item = await this.findOne(id);
+      if (item['statusCode'] != 200) {
+        this.logger.log(
+          'Unable to remove product from inventory because product not found',
+          this.SERVICE,
+        );
+        return genenateReturnObject(404, {}, 'Product not found in inventory.');
       }
       await this.inventoryRepository.update(id, {
         deletedBy: request['user'].sub,
@@ -142,14 +198,23 @@ export class InventoryService {
         .execute();
       const data = await this.inventoryRepository.find({
         where: {
-          id: id,
+          id: Equal(id),
           deletedAt: Not(IsNull()),
         },
         withDeleted: true,
       });
+      this.logger.log(
+        `Product in inventory deleted successfully ${id}`,
+        this.SERVICE,
+      );
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to delete product from inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -157,12 +222,16 @@ export class InventoryService {
     try {
       const item = await this.inventoryRepository.findOne({
         where: {
-          id: id,
+          id: Equal(id),
           deletedAt: Not(IsNull()),
         },
         withDeleted: true,
       });
       if (!item) {
+        this.logger.log(
+          `Product marked as deleted not found inventory ${id}`,
+          this.SERVICE,
+        );
         return genenateReturnObject(
           404,
           {},
@@ -177,9 +246,18 @@ export class InventoryService {
         .restore()
         .where('id = :id', { id: id })
         .execute();
+      this.logger.log(
+        `Product restored successfully to inventory ${id}`,
+        this.SERVICE,
+      );
       return await this.findOne(id);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to restore product to inventory',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 }

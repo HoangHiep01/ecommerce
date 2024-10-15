@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { Repository, Equal, Not, IsNull } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,7 +22,10 @@ export class CartService {
     private cartItemRepository: Repository<CartItem>,
     private customersService: CustomersService,
     private inventoryService: InventoryService,
+    private logger: Logger,
   ) {}
+
+  SERVICE: string = CartService.name;
 
   async create(
     createCartDto: CreateCartDto,
@@ -33,6 +36,7 @@ export class CartService {
         createCartDto.customerId,
       );
       if (customer['statusCode'] != 200) {
+        this.logger.log('Customer not found to create cart', this.SERVICE);
         return genenateReturnObject(400, {}, 'Customer not found');
       }
 
@@ -41,6 +45,7 @@ export class CartService {
         where: { customer: Equal(createCartDto.customerId) },
       });
       if (existCart) {
+        this.logger.log('Customer already has a cart', this.SERVICE);
         return genenateReturnObject(
           201,
           existCart,
@@ -54,9 +59,11 @@ export class CartService {
       cart.updatedBy = request['user'].sub;
       const data = await this.cartRepository.save(cart);
 
+      this.logger.log(`Cart created successfully ${data.id}`, this.SERVICE);
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to create customer', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -70,6 +77,7 @@ export class CartService {
         id: Equal(cartId),
       });
       if (!isCartExist) {
+        this.logger.log('Cart not found to add item', this.SERVICE);
         return genenateReturnObject(404, {}, 'Cart not found.');
       }
 
@@ -77,7 +85,8 @@ export class CartService {
         addItemDto.inventoryId,
       );
       if (isItemExist['statusCode'] != 200) {
-        return genenateReturnObject(404, {}, 'Product not found in inventory.');
+        this.logger.log('Product not found in inventory', this.SERVICE);
+        return genenateReturnObject(404, {}, 'Product not found in inventory');
       }
 
       const isItemInCart = await this.cartItemRepository.findOne({
@@ -89,10 +98,14 @@ export class CartService {
       if (isItemInCart) {
         isItemInCart.quantity += addItemDto.quantity;
         const updateItem = await this.cartItemRepository.save(isItemInCart);
+        this.logger.log(
+          'Item already in cart, increase quantity instead',
+          this.SERVICE,
+        );
         return genenateReturnObject(
           201,
           updateItem,
-          'Product already in cart, quantity added.',
+          'Product already in cart, quantity increased.',
         );
       }
       const item = new CartItem();
@@ -102,9 +115,15 @@ export class CartService {
 
       const addItem = await this.cartItemRepository.save(item);
 
+      this.logger.log('Item added in cart successfully', this.SERVICE);
       return genenateReturnObject(200, addItem, '');
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to add item in cart',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -112,19 +131,29 @@ export class CartService {
     try {
       const query = this.cartRepository.createQueryBuilder('cart');
       const data = await paginate<Cart>(query, options);
+      this.logger.log(`List carts fetched successfully`, this.SERVICE);
       return genenateReturnObject(200, data, '');
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch list carts',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
   async findOne(cartId: number) {
     try {
-      const cart = await this.cartRepository.findOneBy({ id: cartId });
+      const cart = await this.cartRepository.findOne({
+        where: {
+          id: Equal(cartId),
+        },
+      });
       if (!cart) {
+        this.logger.log(`Cart not found ${cartId}`, this.SERVICE);
         return genenateReturnObject(404, {}, 'Cart not found.');
       }
-      // const customer = await this.customersService.findOne(cart.customer);
 
       const items = await this.cartItemRepository.find({
         where: {
@@ -132,9 +161,14 @@ export class CartService {
         },
       });
       cart['items'] = items;
+      this.logger.log(
+        `Cart and items fetched successfully ${cartId}`,
+        this.SERVICE,
+      );
       return genenateReturnObject(200, cart);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to fetch cart', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -147,11 +181,16 @@ export class CartService {
     try {
       const result = await this.isItemInCartValidtor(cartId, itemId);
       if (result['statusCode'] != 200) {
+        this.logger.log('Not pass check item in cart', this.SERVICE);
         return result;
       }
       const itemInCart = result['data'];
 
       if (updateItemDto.quantity > itemInCart.quantity) {
+        this.logger.log(
+          'Item quantity in cart can not update because it has more than in inventory',
+          this.SERVICE,
+        );
         return genenateReturnObject(
           404,
           {},
@@ -163,9 +202,18 @@ export class CartService {
         updatedBy: request['user'].sub,
       });
       await this.cartItemRepository.update(itemInCart.id, updateItemDto);
+      this.logger.log(
+        `Item in cart updated successfully ${cartId} ${itemId}`,
+        this.SERVICE,
+      );
       return this.findOne(cartId);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to update item in cart',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -176,7 +224,9 @@ export class CartService {
   ): Promise<object> {
     try {
       const cart = await this.cartRepository.findOneBy({ id: cartId });
+
       if (!cart) {
+        this.logger.log('Cart not found', this.SERVICE);
         return genenateReturnObject(404, {}, 'Cart not found.');
       }
       if (!updateCartDto.customerId) {
@@ -188,21 +238,28 @@ export class CartService {
       And here got error TS2559
        */
 
-      // await this.cartRepository.update(cartId, updateCartDto);
-      // await this.cartRepository.update(cartId, {
-      //   updatedBy: request['user'].sub,
-      // });
-      // return await this.findOne(cartId);
-      const data = {
-        id: request['user'].sub,
-      };
-      return genenateReturnObject(
-        201,
-        data,
-        'Not implement cause data relationship.',
+      const isCustomerInOtherCart = await this.cartRepository.findOneBy({
+        customer: updateCartDto.customerId,
+      });
+      if (isCustomerInOtherCart) {
+        this.logger.log('Customer already has cart', this.SERVICE);
+        return genenateReturnObject(404, {}, 'Customer already has cart');
+      }
+      await this.cartRepository.update(cartId, {
+        updatedBy: request['user'].sub,
+        customer: updateCartDto.customerId,
+      });
+      return await this.findOne(cartId);
+      const data = await this.findOne(cartId);
+      this.logger.log('Cart information updated successfully', this.SERVICE);
+      return genenateReturnObject(201, data);
+    } catch (error) {
+      this.logger.error(
+        'Unable to update cart information',
+        error.stack,
+        this.SERVICE,
       );
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -210,6 +267,7 @@ export class CartService {
     try {
       const result = await this.isItemInCartValidtor(cartId, itemId);
       if (result['statusCode'] != 200) {
+        this.logger.log('Not pass check item in cart', this.SERVICE);
         return result;
       }
 
@@ -222,9 +280,18 @@ export class CartService {
         .softDelete()
         .where('id = :id', { id: itemInCart.id })
         .execute();
+      this.logger.log(
+        `Items deleted successfully from cart ${cartId} ${itemId}`,
+        this.SERVICE,
+      );
       return this.findOne(cartId);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to delete item from cart',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -239,6 +306,10 @@ export class CartService {
         withDeleted: true,
       });
       if (!item) {
+        this.logger.log(
+          `Item marked as deleted in cart not found ${cartId} ${itemId}`,
+          this.SERVICE,
+        );
         return genenateReturnObject(
           404,
           {},
@@ -253,9 +324,14 @@ export class CartService {
         .restore()
         .where('id = :id', { id: item.id })
         .execute();
+      this.logger.log(
+        `Item restored to cart successfully ${cartId} ${itemId}`,
+        this.SERVICE,
+      );
       return this.findOne(cartId);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to restore item', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -284,11 +360,14 @@ export class CartService {
       });
 
       if (!isItemInCart) {
+        this.logger.log('Item not found in cart', this.SERVICE);
         return genenateReturnObject(404, {}, 'Product not found in cart.');
       }
+      this.logger.log('CHECK', this.SERVICE);
       return genenateReturnObject(200, isItemInCart);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to check', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 }

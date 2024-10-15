@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Request } from 'express';
 import { Repository, Equal } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,7 +23,10 @@ export class OrderService {
     private cartService: CartService,
     private customersService: CustomersService,
     private inventoryService: InventoryService,
+    private logger: Logger,
   ) {}
+
+  SERVICE: string = OrderService.name;
 
   async create(
     createOrderDto: CreateOrderDto,
@@ -40,6 +43,7 @@ export class OrderService {
         (item) => item['inventory'].quantity >= item.quantity,
       );
       if (!canMakeOrder) {
+        this.logger.log('Product is not enough to order', this.SERVICE);
         return genenateReturnObject(400, {}, 'Product is not enough to order.');
       }
 
@@ -53,6 +57,7 @@ export class OrderService {
       order.updatedBy = request['user'].sub;
       const ordered = await this.orderRepository.save(order);
       if (!ordered) {
+        this.logger.log('Can not creat order', this.SERVICE);
         return genenateReturnObject(400, {}, 'Can not creat order.');
       }
 
@@ -78,9 +83,11 @@ export class OrderService {
           request,
         );
       }
+      this.logger.log('Order created successfully', this.SERVICE);
       return await this.findOne(order.id);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to create order', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -88,9 +95,15 @@ export class OrderService {
     try {
       const query = this.orderRepository.createQueryBuilder('order');
       const data = await paginate<Order>(query, options);
+      this.logger.log(`List orders fetched successfully`, this.SERVICE);
       return genenateReturnObject(200, data, '');
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch list orders',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -98,6 +111,7 @@ export class OrderService {
     try {
       const order = await this.orderRepository.findOneBy({ id: orderId });
       if (!order) {
+        this.logger.log(`Order not found ${orderId}`, this.SERVICE);
         return genenateReturnObject(404, {}, 'Order not found.');
       }
 
@@ -107,9 +121,11 @@ export class OrderService {
         },
       });
       order['items'] = items;
+      this.logger.log(`Order fetched successfully ${orderId}`, this.SERVICE);
       return genenateReturnObject(200, order);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to fetch order', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
@@ -121,9 +137,14 @@ export class OrderService {
     try {
       const order = await this.orderRepository.findOneBy({ id: orderId });
       if (!order) {
+        this.logger.log(`Order not found ${orderId}`, this.SERVICE);
         return genenateReturnObject(404, {}, 'Order not found.');
       }
       if (!updateOrderDto.orderState) {
+        this.logger.log(
+          `Request update something is not state of order ${orderId}`,
+          this.SERVICE,
+        );
         return genenateReturnObject(
           400,
           {},
@@ -131,6 +152,10 @@ export class OrderService {
         );
       }
       if (order.state == OrderState.CANCELED) {
+        this.logger.log(
+          `Order have been canceled, but call update state ${orderId}`,
+          this.SERVICE,
+        );
         return genenateReturnObject(
           400,
           {},
@@ -142,9 +167,11 @@ export class OrderService {
         updatedBy: request['user'].sub,
         state: updateOrderDto.orderState,
       });
+      this.logger.log(`Order updated successfully ${orderId}`, this.SERVICE);
       return await this.findOne(order.id);
-    } catch (e) {
-      return genenateReturnObject(e.statusCode, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to update order', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
