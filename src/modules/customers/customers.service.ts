@@ -126,6 +126,15 @@ export class CustomersService {
 
       const customer = await this.findOne(id);
       if (customer['statusCode'] != 200) {
+        this.logger.log(
+          'Unable to update customer because customer not found',
+          this.SERVICE,
+        );
+        return genenateReturnObject(
+          409,
+          {},
+          'Email or phonenumber already exist',
+        );
         return genenateReturnObject(404, {}, 'Customer not found');
       }
       await this.customerRepository.update(id, {
@@ -144,6 +153,10 @@ export class CustomersService {
     try {
       const customer = await this.findOne(id);
       if (customer['statusCode'] != 200) {
+        this.logger.log(
+          'Unable to remove customer because customer not found',
+          this.SERVICE,
+        );
         return genenateReturnObject(404, {}, 'Customer not found');
       }
       await this.customerRepository.update(id, {
