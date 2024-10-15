@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Req,
@@ -72,7 +71,7 @@ export class InventoryController {
     'Update product information in inventory, mainly focuse on update quantity.',
     'Product information is updated.',
   )
-  @Patch(':id')
+  @Post(':id')
   update(
     @Param('id') id: string,
     @Body() updateInventoryDto: UpdateInventoryDto,
@@ -94,7 +93,7 @@ export class InventoryController {
     'Restore a product in inventory that marked as deleted',
     'Item is back.',
   )
-  @Post(':id')
+  @Post('restore/:id')
   restore(@Param('id') id: string, @Req() request: Request) {
     return this.inventoryService.restore(+id, request);
   }

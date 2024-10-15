@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Req,
   DefaultValuePipe,
@@ -46,7 +45,7 @@ export class OrderController {
   }
 
   @ApiDocument('Update state order by id.', 'State was updated')
-  @Patch(':id')
+  @Post('update/:id')
   update(
     @Param('id') id: string,
     @Body() updateOrderDto: UpdateOrderDto,

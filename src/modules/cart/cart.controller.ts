@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Req,
@@ -33,7 +32,7 @@ export class CartController {
   }
 
   @ApiDocument('Add item into cart.', 'Item was added into cart.')
-  @Post('/:cartId')
+  @Post('add/:cartId')
   add(
     @Param('cartId') cartId: string,
     @Req() request: Request,
@@ -65,7 +64,7 @@ export class CartController {
     'Update product quantity in cart.',
     'Product quantity was updated.',
   )
-  @Patch('/:cartId/item/:itemId')
+  @Post('/:cartId/item/:itemId')
   updateItem(
     @Param('cartId') cartId: string,
     @Param('itemId') itemId: string,
@@ -81,7 +80,7 @@ export class CartController {
   }
 
   @ApiDocument('Update cart information.', 'Cart information was updated.')
-  @Patch('/:cartId')
+  @Post('/:cartId')
   updateCart(
     @Param('cartId') cartId: string,
     @Body() updateCartDto: UpdateCartDto,
@@ -107,7 +106,7 @@ export class CartController {
     'Restore item in cart marked as delete.',
     'Item restore in cart.',
   )
-  @Post(':cardId/item/:itemId')
+  @Post('restore/:cardId/item/:itemId')
   restore(
     @Param('cardId') cardId: string,
     @Param('itemId') itemId: string,
