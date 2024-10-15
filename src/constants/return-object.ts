@@ -9,9 +9,9 @@ export type returnObject = {
 };
 
 export function genenateReturnObject(
-  statusCode: number = 200,
+  statusCode: number = 400,
   data: any = {},
-  errorMessage: string = 'No error',
+  errorMessage: string = '',
 ): returnObject {
   const result: returnObject = {
     statusCode: statusCode,
