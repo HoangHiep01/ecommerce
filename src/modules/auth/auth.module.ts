@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -33,6 +33,7 @@ import { RolesGuard } from './role.guard';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    Logger,
   ],
   exports: [AuthService],
 })
