@@ -7,6 +7,7 @@ import type { INestApplication } from '@nestjs/common';
 
 export function setupSwagger(app: INestApplication): void {
   const documentBuiler = new DocumentBuilder()
+    .setBasePath('/api/v1')
     .setTitle('Ecommerce example')
     .setDescription('The ecommerce API description')
     .setVersion('1.0')
@@ -26,6 +27,7 @@ export function setupSwagger(app: INestApplication): void {
 
   const documentBuilerOptions: SwaggerDocumentOptions = {
     operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+    ignoreGlobalPrefix: false,
   };
 
   const document = SwaggerModule.createDocument(
@@ -33,5 +35,5 @@ export function setupSwagger(app: INestApplication): void {
     documentBuiler,
     documentBuilerOptions,
   );
-  SwaggerModule.setup('api/v1', app, document);
+  SwaggerModule.setup('swagger', app, document);
 }
