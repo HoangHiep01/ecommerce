@@ -31,9 +31,7 @@ export class RolesGuard implements CanActivate {
 
     const userName = request['user'].userName;
     const user = await this.usersService.findOneByUserName(userName);
-    // console.log(userName);
-    // console.log(user);
-    return requiredRoles === user.role;
+    return requiredRoles === user['data'].role;
   }
 
   async verifyTokenAsync(request: Request): Promise<boolean> {
