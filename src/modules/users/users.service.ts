@@ -1,11 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import {
-  paginate,
-  Pagination,
-  IPaginationOptions,
-} from 'nestjs-typeorm-paginate';
+import { Repository, Equal } from 'typeorm';
+import { paginate, IPaginationOptions } from 'nestjs-typeorm-paginate';
 import { CreateUserDto } from './dto/create-user.dto';
 // import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -17,7 +13,10 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private logger: Logger,
   ) {}
+
+  SERVICE: string = UsersService.name;
 
   async createUser(createUserDto: CreateUserDto): Promise<object> {
     try {
@@ -27,9 +26,16 @@ export class UsersService {
       );
       const isEmailExist = await this.findOneByEmail(createUserDto.email);
 
-      if (isUserNameExist || isEmailExist) {
+      if (
+        isUserNameExist['statusCode'] == 200 ||
+        isEmailExist['statusCode'] == 200
+      ) {
+        this.logger.log(
+          'Unable to create user cause unique constraint',
+          this.SERVICE,
+        );
         return genenateReturnObject(
-          400,
+          409,
           {},
           'Username or email already taken.',
         );
@@ -49,46 +55,92 @@ export class UsersService {
       const data = await this.usersRepository.save(user);
       delete data.password;
 
+      this.logger.log(`User created successfully ${data.id}`);
       return genenateReturnObject(200, data);
-    } catch (e) {
-      return genenateReturnObject(400, {}, (e as Error).message);
+    } catch (error) {
+      this.logger.error('Unable to create user', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
-  async findAll(options: IPaginationOptions): Promise<Pagination<User>> {
-    const query = this.usersRepository.createQueryBuilder('users');
-    return paginate<User>(query, options);
-  }
-
-  async findOneByUserName(userName: string): Promise<User | undefined> {
+  async findAll(options: IPaginationOptions): Promise<object> {
     try {
-      return this.usersRepository.findOneBy({ userName });
-    } catch (e) {
-      console.log(e);
-      return undefined;
+      const query = this.usersRepository.createQueryBuilder('users');
+      const data = await paginate<User>(query, options);
+      this.logger.log('List users fetched successfully', this.SERVICE);
+      return genenateReturnObject(200, data);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch list users',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
-  async findOneByEmail(email: string): Promise<User | undefined> {
+  async findOneByUserName(userName: string): Promise<object> {
     try {
-      return this.usersRepository.findOneBy({ email });
-    } catch (e) {
-      console.log(e);
-      return undefined;
+      const user = await this.usersRepository.findOne({
+        where: {
+          userName: Equal(userName),
+        },
+      });
+      if (!user) {
+        this.logger.log(`Unable to find user with ${userName}`, this.SERVICE);
+        return genenateReturnObject(404, {}, 'User not found');
+      }
+      this.logger.log(`User ${userName} fetch successfully`, this.SERVICE);
+      return genenateReturnObject(200, user);
+    } catch (error) {
+      this.logger.error('Unable to fetch user', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
-  async findPasswordByUserName(userName: string): Promise<User | undefined> {
+  async findOneByEmail(email: string): Promise<object> {
     try {
-      return await this.usersRepository
+      const user = await this.usersRepository.findOne({
+        where: {
+          email: Equal(email),
+        },
+      });
+      if (!user) {
+        this.logger.log(`Unable to find user with ${email}`, this.SERVICE);
+        return genenateReturnObject(404, {}, 'User not found');
+      }
+      this.logger.log(`User ${email} fetch successfully`, this.SERVICE);
+      return genenateReturnObject(200, user);
+    } catch (error) {
+      this.logger.error('Unable to fetch user', error.stack, this.SERVICE);
+      return genenateReturnObject(error.statusCode, {}, error.message);
+    }
+  }
+
+  async findPasswordByUserName(userName: string): Promise<object> {
+    try {
+      const userPassword = await this.usersRepository
         .createQueryBuilder('users')
         .select('users.userName', 'userName')
         .addSelect('users.password')
         .where('users.userName = :userName', { userName: userName })
         .getOne();
-    } catch (e) {
-      console.log(e);
-      return undefined;
+      if (!userPassword) {
+        this.logger.log(
+          `Unable to find user password by ${userName}`,
+          this.SERVICE,
+        );
+        return genenateReturnObject(404, {}, 'Can not found password');
+      }
+      this.logger.log(`User password fetch successfully`, this.SERVICE);
+      return genenateReturnObject(200, userPassword);
+    } catch (error) {
+      this.logger.error(
+        'Unable to fetch user password',
+        error.stack,
+        this.SERVICE,
+      );
+      return genenateReturnObject(error.statusCode, {}, error.message);
     }
   }
 
