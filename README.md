@@ -95,6 +95,8 @@ DATABASE_PASSWORD=
 DATABASE_NAME=
 
 SECRET=
+
+NODE_ENV=
 ```
 
 #### Project setup
