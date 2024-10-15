@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Req,
@@ -49,7 +48,7 @@ export class CustomersController {
     return this.customersService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Post(':id')
   @ApiDocument('Update customer by id.', 'Customer information updated.')
   update(
     @Param('id') id: string,
