@@ -126,16 +126,16 @@ export class InventoryService {
 
   async findOne(id: number): Promise<object> {
     try {
-      // const query = await this.inventoryRepository
-      //   .createQueryBuilder('inventory')
-      //   .leftJoinAndSelect('inventory.productId', 'product')
-      //   .where('inventory.id = :id', { id });
-      // const data = await query.getOne();
-      const data = await this.inventoryRepository.findOne({
-        where: {
-          id: Equal(id),
-        },
-      });
+      const query = await this.inventoryRepository
+        .createQueryBuilder('inventory')
+        .leftJoinAndSelect('inventory.productId', 'product')
+        .where('inventory.id = :id', { id });
+      const data = await query.getOne();
+      // const data = await this.inventoryRepository.findOne({
+      //   where: {
+      //     id: Equal(id),
+      //   },
+      // });
       if (!data) {
         this.logger.log(`Product not found in inventory ${id}`, this.SERVICE);
         return genenateReturnObject(400, {}, 'Product not found in inventory.');
